@@ -98,7 +98,3 @@ http://127.0.0.1:5000/
 ## Contributors
 
 This project was created as part of a group assignment on form validation using regular expressions.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
