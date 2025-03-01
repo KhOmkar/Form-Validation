@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Validation with Regular Expressions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .password-strength {
+            margin-top: 5px;
+            font-size: 14px;
+        }
+        
+        .weak {
+            color: red;
+        }
+        
+        .moderate {
+            color: orange;
+        }
+        
+        .strong {
+            color: green;
+        }
+        
+        .success-message {
+            color: green;
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Registration Form</h1>
+    <form id="registrationForm" novalidate>
+        <div class="form-group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" placeholder="Enter your full name">
+            <div id="nameError" class="error">Name must be 3-50 characters long and contain only letters and spaces.</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" placeholder="Enter your email address">
+            <div id="emailError" class="error">Please enter a valid email address.</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="phone">Mobile Number</label>
+            <input type="tel" id="phone" placeholder="Enter your 10-digit mobile number">
+            <div id="phoneError" class="error">Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9.</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Enter your password">
+            <div id="passwordError" class="error">Password must be 8-20 characters.</div>
+            <div id="passwordStrength" class="password-strength"></div>
+        </div>
+        
+        <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input type="password" id="confirmPassword" placeholder="Confirm your password">
+            <div id="confirmPasswordError" class="error">Passwords do not match.</div>
+        </div>
+        
+        <button type="submit">Register</button>
+    </form>
+    
+    <div id="successMessage" class="success-message">
+        Form submitted successfully! All validations passed.
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('registrationForm');
+            const nameInput = document.getElementById('name');
+            const emailInput = document.getElementById('email');
+            const phoneInput = document.getElementById('phone');
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            const passwordStrength = document.getElementById('passwordStrength');
+            const successMessage = document.getElementById('successMessage');
+            
+            // Regex patterns based on provided rules
+            const nameRegex = /^[a-zA-Z\s]{3,50}$/;
+            const emailRegex = /^[a-z0-9][a-zA-Z0-9]{0,15}(\.[a-zA-Z]{1,15}){0,5}@[a-zA-Z]{2,15}(\.[a-zA-Z]{2,15}){1,5}$/;
+            const phoneRegex = /^[6-9][0-9]{9}$/;
+            const weakPasswordRegex = /^(?=.*[a-z])(?=.*[0-9])[a-z0-9]{8,20}$/;
+            const moderatePasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])[a-zA-Z0-9]{8,20}$/;
+            const strongPasswordRegex = /^(?=.*[!@#$%^&*])(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,20}$/;
+            
+            // Real-time validation for name
+            nameInput.addEventListener('input', function() {
+                validateName();
+            });
+            
+            // Real-time validation for email
+            emailInput.addEventListener('input', function() {
+                validateEmail();
+            });
+            
+            // Real-time validation for phone
+            phoneInput.addEventListener('input', function() {
+                validatePhone();
+            });
+            
+            // Real-time validation and strength check for password
+            passwordInput.addEventListener('input', function() {
+                validatePassword();
+                checkPasswordStrength();
+            });
+            
+            // Real-time validation for confirm password
+            confirmPasswordInput.addEventListener('input', function() {
+                validateConfirmPassword();
+            });
+            
+            // Form submission validation
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                
+                // Validate all fields
+                const isNameValid = validateName();
+                const isEmailValid = validateEmail();
+                const isPhoneValid = validatePhone();
+                const isPasswordValid = validatePassword();
+                const isConfirmPasswordValid = validateConfirmPassword();
+                
+                // If all validations pass
+                if (isNameValid && isEmailValid && isPhoneValid && isPasswordValid && isConfirmPasswordValid) {
+                    successMessage.style.display = 'block';
+                    form.reset();
+                    passwordStrength.textContent = '';
+                } else {
+                    successMessage.style.display = 'none';
+                }
+            });
+            
+            // Validation functions
+            function validateName() {
+                const nameError = document.getElementById('nameError');
+                const isValid = nameRegex.test(nameInput.value);
+                
+                if (!isValid) {
+                    nameError.style.display = 'block';
+                    nameInput.style.borderColor = 'red';
+                } else {
+                    nameError.style.display = 'none';
+                    nameInput.style.borderColor = '#ddd';
+                }
+                
+                return isValid;
+            }
+            
+            function validateEmail() {
+                const emailError = document.getElementById('emailError');
+                const isValid = emailRegex.test(emailInput.value);
+                
+                if (!isValid) {
+                    emailError.style.display = 'block';
+                    emailInput.style.borderColor = 'red';
+                } else {
+                    emailError.style.display = 'none';
+                    emailInput.style.borderColor = '#ddd';
+                }
+                
+                return isValid;
+            }
+            
+            function validatePhone() {
+                const phoneError = document.getElementById('phoneError');
+                const isValid = phoneRegex.test(phoneInput.value);
+                
+                if (!isValid) {
+                    phoneError.style.display = 'block';
+                    phoneInput.style.borderColor = 'red';
+                } else {
+                    phoneError.style.display = 'none';
+                    phoneInput.style.borderColor = '#ddd';
+                }
+                
+                return isValid;
+            }
+            
+            function validatePassword() {
+                const passwordError = document.getElementById('passwordError');
+                // Check if password is at least 8 chars and meets minimum requirements
+                const isValid = passwordInput.value.length >= 8 && 
+                                passwordInput.value.length <= 20 &&
+                                (weakPasswordRegex.test(passwordInput.value) || 
+                                 moderatePasswordRegex.test(passwordInput.value) || 
+                                 strongPasswordRegex.test(passwordInput.value));
+                
+                if (!isValid) {
+                    passwordError.style.display = 'block';
+                    passwordInput.style.borderColor = 'red';
+                } else {
+                    passwordError.style.display = 'none';
+                    passwordInput.style.borderColor = '#ddd';
+                }
+                
+                return isValid;
+            }
+            
+            function validateConfirmPassword() {
+                const confirmPasswordError = document.getElementById('confirmPasswordError');
+                const isValid = confirmPasswordInput.value === passwordInput.value && confirmPasswordInput.value !== '';
+                
+                if (!isValid) {
+                    confirmPasswordError.style.display = 'block';
+                    confirmPasswordInput.style.borderColor = 'red';
+                } else {
+                    confirmPasswordError.style.display = 'none';
+                    confirmPasswordInput.style.borderColor = '#ddd';
+                }
+                
+                return isValid;
+            }
+            
+            function checkPasswordStrength() {
+                if (passwordInput.value === '') {
+                    passwordStrength.textContent = '';
+                    return;
+                }
+                
+                if (strongPasswordRegex.test(passwordInput.value)) {
+                    passwordStrength.textContent = 'Strong Password';
+                    passwordStrength.className = 'password-strength strong';
+                } else if (moderatePasswordRegex.test(passwordInput.value)) {
+                    passwordStrength.textContent = 'Moderate Password';
+                    passwordStrength.className = 'password-strength moderate';
+                } else if (weakPasswordRegex.test(passwordInput.value)) {
+                    passwordStrength.textContent = 'Weak Password';
+                    passwordStrength.className = 'password-strength weak';
+                } else {
+                    passwordStrength.textContent = 'Invalid Password';
+                    passwordStrength.className = 'password-strength weak';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
